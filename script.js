@@ -752,7 +752,7 @@ function handleChallengeChoice(selectedIndex) {
   const bonus = correct ? (currentLifelineUsed ? 5 : 10) : 0;
   const message = correct
     ? `Tamang sagot! Nakakuha ng ${bonus} bonus points.`
-    : 'Maling sagot. Walang bonus points.';
+    : `Maling sagot. Nakatanggap pa rin ng ${pendingScore} puntos mula sa salitang iyon.`;
   setMoveMessage(message);
   hideChallenge();
   completeTurn(pendingWord, pendingScore, bonus);
@@ -1045,16 +1045,18 @@ function completeTurn(word, moveScore, bonus = 0) {
   renderBoard();
   renderRack();
   updateStats();
-  setMoveMessage(`Salitang naisumite: ${word}. Nakuha ng ${totalMoveScore} puntos.`);
+  const scoreMessage = `Salitang naisumite: ${word}. Nakuha ng ${totalMoveScore} puntos.`;
 
   if (players.length > 0) {
     currentPlayer = (currentPlayer + 1) % players.length;
     turnNumber += 1;
     updateStats();
     renderRack();
-    setMoveMessage(`Turn passed to ${players[currentPlayer].name}.`);
+    setMoveMessage(`${scoreMessage} Turn passed to ${players[currentPlayer].name}.`);
     // start build timer for next player
     startBuildTimer();
+  } else {
+    setMoveMessage(scoreMessage);
   }
   saveGameState();
 }
