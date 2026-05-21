@@ -388,15 +388,10 @@ body {
 
 .player-count-buttons .button {
   min-width: 120px;
-}
-
-#playerSetup form {
-  display: grid;
-  gap: 18px;
-}
-
-#playerNames label {
-  display: grid;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
   gap: 8px;
   color: var(--muted);
 }
