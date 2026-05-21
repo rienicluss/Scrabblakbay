@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCRABBLakbay</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app game-screen">
+    <div class="game-layout">
+      <section class="control-panel panel">
+        <div class="control-card">
+          <h3>Mga Aksyon</h3>
+          <div class="actions-grid">
+            <button id="submitMove" class="button primary">Isumite</button>
+            <button id="exchangeTiles" class="button secondary">Palitan</button>
+            <button id="passTurn" class="button secondary">I-pass</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="board-panel panel">
+        <div class="board-header">
+          <div>
+            <span class="board-label">SCRABBLakbay Board</span>
+          </div>
+          <div class="board-meta">
+            <span class="meta-chip">Natitirang titik: <strong id="bagCount">100</strong>
+              <span class="meta-timer" style="margin-left:10px">Oras: <strong id="buildTimer">60</strong>s</span>
+            </span>
+          </div>
+        </div>
+        <div class="board" id="board" aria-label="Scrabble board"></div>
+      </section>
+
+      <aside class="player-panel panel">
+        <div class="player-card">
+          <h2>Manlalaro</h2>
+          <p class="player-name" id="currentPlayerName">-</p>
+          <p class="player-score">Puntos: <span id="currentPlayerScore">0</span></p>
+          <p class="player-turn">Turno: <strong id="turnNumber">1</strong></p>
+        </div>
+
+        <div class="info-card panel">
+          <h3>Mga Manlalaro</h3>
+          <div id="scoreGrid" class="score-board"></div>
+        </div>
+
+        <div class="info-card panel">
+          <h3>Impormasyon ng Galaw</h3>
+          <p id="moveInfo">Piliin ang titik para simulang ilagay ang salita.</p>
+          <p id="errorText" class="error"></p>
+        </div>
+
+      </aside>
+
+      <section class="rack-panel panel">
+        <h3>Rack ng Titik</h3>
+        <div class="rack grid" id="rack"></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="challengeModal" class="modal-overlay hidden" aria-hidden="true">
+    <div class="panel modal-card">
+      <h2>Ugnay Challenge</h2>
+      <p class="home-tagline">Sagutin ang tanong tungkol sa salitang nabuo.</p>
+      <p id="challengeWord" class="challenge-word"></p>
+      <p class="challenge-timer">Oras: <span id="challengeTimer">30</span> segundo</p>
+      <p id="challengePrompt" class="challenge-prompt"></p>
+      <div id="challengeOptions" class="challenge-options"></div>
+      <div class="challenge-lifelines">
+        <button id="challengeRemoveTwoBtn" class="button secondary" type="button">Tanggal-Dalawa</button>
+        <button id="challengeAskFriendBtn" class="button secondary" type="button">Tanong-Kakampi</button>
+      </div>
+      <button id="challengeHintBtn" class="button secondary" type="button">Pahiwatig</button>
+      <p id="challengeHint" class="hint-text hidden"></p>
+    </div>
+  </div>
+
+  <script src="sound.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

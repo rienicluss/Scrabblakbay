@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mekaniks ng SCRABBLakbay</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Page-specific UI tweaks for mechanics page */
+    .page-header { display: flex; justify-content: space-between; align-items: center; width: calc(100% - 40px); max-width: 1100px; margin: 28px auto; color: var(--text); background: rgba(10, 10, 14, 0.82); padding: 18px 24px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 24px 60px rgba(0,0,0,0.28); }
+    .page-header h1 { margin: 0; font-size: clamp(2rem, 3.2vw, 2.8rem); line-height: 1.05; }
+    .page-header .home-tagline { margin: 8px 0 0; color: var(--muted); max-width: 600px; }
+    .page-header .nav-links { display: flex; gap: 12px; flex-wrap: wrap; }
+    .page-header .nav-links .button { background: rgba(255,255,255,0.14); color: var(--text); border: 1px solid rgba(255,255,255,0.16); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+    .mechanics-content { max-width: 1100px; width: calc(100% - 40px); padding: 12px; display: grid; gap: 18px; color: var(--text); }
+    .mechanics-content .card { padding: 26px 30px; background: rgba(10, 10, 12, 0.95); border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 22px 55px rgba(0,0,0,0.28); backdrop-filter: blur(8px); }
+    .mechanics-content p, .mechanics-content li, .mechanics-content th, .mechanics-content td { color: var(--text); line-height: 1.75; }
+    .mechanics-content h2 { margin-top: 0; color: #ffebc2; }
+    .mechanics-content ul { padding-left: 1.3rem; }
+    .mechanics-content li { margin-bottom: 0.75rem; }
+    .toc { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
+    .toc a { color: #f9f1d8; text-decoration: none; padding:10px 14px; border-radius:14px; background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.12); }
+    .toc a:hover { background: rgba(255,255,255,0.16); }
+    .points-table { width:100%; border-collapse: collapse; margin-top:8px; }
+    .points-table th, .points-table td { text-align:left; padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.12); }
+    .points-table th { color: var(--primary); }
+    .mechanics-content strong { color: #fff2c6; }
+    .mechanics-content .section + .section { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <header class="page-header">
+      <div>
+        <h1>Mekaniks ng Laro</h1>
+        <p class="home-tagline">Basahin ang mga patakaran bago simulan ang laro.</p>
+      </div>
+      <nav class="nav-links">
+        <a class="button secondary" href="index.html">Home</a>
+      </nav>
+    </header>
+
+    <main class="page-main mechanics-content">
+      <nav class="toc" aria-label="Table of contents">
+        <a href="#players">Players</a>
+        <a href="#names">Pangalan</a>
+        <a href="#build">Bumuo</a>
+        <a href="#points">Puntos</a>
+        <a href="#challenge">Ugnay Challenge</a>
+        <a href="#lifelines">Lifelines</a>
+        <a href="#timing">Oras</a>
+      </nav>
+
+      <section id="players" class="section card">
+        <h2>1. Piliin ang Bilang ng Manlalaro</h2>
+        <p>Pumili kung ilan ang maglalaro:</p>
+        <ul>
+          <li>2 Manlalaro</li>
+          <li>3 Manlalaro</li>
+          <li>4 Manlalaro</li>
+        </ul>
+        <p>Isang device lamang ang gagamitin. Magpapalitan ang mga manlalaro sa paggamit ng screen kapag turn na nila.</p>
+      </section>
+
+      <section id="names" class="section card">
+        <h2>2. Ilagay ang Pangalan</h2>
+        <p>Ilagay ang pangalan ng bawat manlalaro o pangkat.</p>
+        <p>Halimbawa:</p>
+        <ul>
+          <li>Player 1: Pangkat A</li>
+          <li>Player 2: Pangkat B</li>
+          <li>Player 3: Pangkat C</li>
+          <li>Player 4: Pangkat D</li>
+        </ul>
+        <p>Pagkatapos, bumalik sa Home page upang magsimula ng laro.</p>
+      </section>
+
+      <section id="build" class="section card">
+        <h2>3. Bumuo ng Salita</h2>
+        <p>Kapag ikaw ang nakaturn, bumuo ng salita sa board gamit ang mga titik na mayroon ka.</p>
+        <p>Ang salita ay dapat mula sa word bank ng aralin, tulad ng:</p>
+        <p><strong>PAMILYA, LIPUNAN, ANGKAN, KASARIAN, PATRIYARKAL, MATRIYARKAL, BILATERAL, MINANGKABAU, MONOGAMIYA, POLIGAMIYA</strong></p>
+        <p>Tandaan:</p>
+        <ul>
+          <li>Dapat tama ang baybay ng salita.</li>
+          <li>Hindi maaaring ulitin ang salitang nagamit na.</li>
+          <li>Dapat konektado ang salita sa aralin.</li>
+          <li>Kapag invalid ang salita, walang puntos sa turn na iyon.</li>
+        </ul>
+      </section>
+
+      <section id="points" class="section card">
+        <h2>4. Puntos sa Board</h2>
+        <p>May katumbas na puntos ang bawat titik. Mas tataas ang puntos kapag ang titik o salita ay nailagay sa special tiles.</p>
+        <table class="points-table" aria-describedby="points-desc">
+          <thead>
+            <tr><th>Special Tile</th><th>Gamit</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Double Letter</td><td>Doble ang puntos ng titik</td></tr>
+            <tr><td>Triple Letter</td><td>Triple ang puntos ng titik</td></tr>
+            <tr><td>Double Word</td><td>Doble ang puntos ng buong salita</td></tr>
+            <tr><td>Triple Word</td><td>Triple ang puntos ng buong salita</td></tr>
+          </tbody>
+        </table>
+        <p id="points-desc">Ang puntos mula sa board ay tatawaging <strong>Board Score</strong>.</p>
+      </section>
+
+      <section id="challenge" class="section card">
+        <h2>5. Sagutin ang Ugnay Challenge</h2>
+        <p>Kapag valid ang salitang nabuo, lalabas ang Ugnay Challenge. Piliin ang tamang sagot bago maubos ang oras.</p>
+        <p>Halimbawa:</p>
+        <p><strong>Salita:</strong> ANGKAN</p>
+        <p><strong>Tanong:</strong> Bakit mahalaga ang angkan sa sinaunang lipunan?</p>
+        <ul>
+          <li>A. Ito ang batayan ng lahat ng gawaing pang-ekonomiya.</li>
+          <li>B. Ito ang tawag sa pagsasama ng isang lalaki at isang babae.</li>
+          <li>C. Ipinapakita nito ang pinagmulan, pagkakakilanlan, at ugnayan ng magkakamag-anak.</li>
+          <li>D. Ipinapakita nito ang bilang ng produktong nagagawa ng pamilya.</li>
+        </ul>
+      </section>
+
+      <section class="section card">
+        <h2>6. Bonus Points sa Ugnay Challenge</h2>
+        <p>Kapag tama ang sagot sa Ugnay Challenge, may dagdag na puntos.</p>
+        <ul>
+          <li>Tamang sagot nang walang lifeline: +10 points</li>
+          <li>Tamang sagot gamit ang lifeline: +5 points</li>
+          <li>Maling sagot: Walang bonus</li>
+          <li>Naubusan ng oras: Walang bonus</li>
+          <li>Invalid na salita: Walang puntos</li>
+        </ul>
+        <p>Formula: <strong>Final Score = Board Score + Ugnay Bonus</strong></p>
+      </section>
+
+      <section id="lifelines" class="section card">
+        <h2>7. Gamitin ang Lifelines</h2>
+        <p>May 3 lifelines ang bawat manlalaro. Bawat lifeline ay maaaring gamitin isang beses lamang sa buong laro.</p>
+        <ul>
+          <li><strong>Tanggal-Dalawa</strong> - Tatanggalin ang dalawang maling sagot.</li>
+          <li><strong>Pahiwatig</strong> - Magbibigay ng maikling clue.</li>
+          <li><strong>Tanong-Kakampi</strong> - Bibigyan ka ng 10 segundo para magtanong sa kakampi.</li>
+        </ul>
+        <p>Tandaan: Isang lifeline lamang ang maaaring gamitin sa bawat tanong. Dapat gamitin ang lifeline bago pumili ng sagot.</p>
+      </section>
+
+      <section id="timing" class="section card">
+        <h2>8. Oras sa Bawat Turn</h2>
+        <p>May limitasyon ang oras upang maging mabilis at masaya ang laro.</p>
+        <ul>
+          <li>Pagbuo ng salita: 60 segundo</li>
+          <li>Ugnay Challenge: 30 segundo</li>
+          <li>Tanong-Kakampi: 10 segundo</li>
+        </ul>
+        <p>Kapag naubos ang oras sa pagbuo ng salita, matatapos ang turn at walang puntos. Kapag naubos ang oras sa Ugnay Challenge, makukuha pa rin ang Board Score ngunit walang bonus points.</p>
+      </section>
+
+      <section class="section card">
+        <h2>9. Paglipat ng Turn</h2>
+        <p>Pagkatapos ng bawat turn:</p>
+        <ul>
+          <li>Ipapakita ang nabuong salita.</li>
+          <li>Ipapakita ang Board Score.</li>
+          <li>Ipapakita ang sagot sa Ugnay Challenge.</li>
+          <li>Idadagdag ang puntos.</li>
+          <li>Lilipat ang turn sa susunod na manlalaro.</li>
+        </ul>
+      </section>
+
+      <section class="section card">
+        <h2>10. Panalo at Scoreboard</h2>
+        <p>Sa dulo ng laro, lalabas ang final scoreboard. Makikita rito ang:</p>
+        <ul>
+          <li>Ranggo ng mga manlalaro</li>
+          <li>Kabuuang puntos</li>
+          <li>Bilang ng tamang sagot sa Ugnay Challenge</li>
+          <li>Pinakamataas na word score</li>
+          <li>Lifelines na nagamit</li>
+        </ul>
+        <p>Ang may pinakamataas na puntos ang magiging Overall Champion.</p>
+      </section>
+
+      <section class="section card">
+        <h2>Paano Laruin (Short Version)</h2>
+        <ul>
+          <li>Pumili ng 2, 3, o 4 players.</li>
+          <li>Ilagay ang pangalan ng bawat player o pangkat.</li>
+          <li>Kapag turn mo na, bumuo ng salitang may kaugnayan sa aralin.</li>
+          <li>Kapag valid ang salita, sasagot ka ng Ugnay Challenge.</li>
+          <li>Makakakuha ka ng Board Score mula sa salita.</li>
+          <li>Kapag tama ang sagot mo sa Ugnay Challenge, may bonus points ka.</li>
+          <li>Maaari kang gumamit ng lifeline kung kailangan.</li>
+          <li>Pagkatapos ng turn mo, susunod naman ang ibang player.</li>
+          <li>Sa dulo ng laro, lalabas ang final scoreboard.</li>
+          <li>Ang may pinakamataas na puntos ang panalo.</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+  <script src="sound.js"></script>
+</body>
+</html>

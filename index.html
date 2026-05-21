@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCRABBLakbay</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-wrapper">
+    <header class="page-header">
+    </header>
+
+    <main class="page-main">
+      <section class="hero title-screen">
+        <div class="title-logo">
+          <img class="title-logo-img" src="assets/bg-logo.png" alt="SCRABBLakbay logo" />
+        </div>
+        <div class="button-grid">
+          <button id="homeStartBtn" class="button primary" type="button">Start</button>
+          <a class="button secondary" href="mechanics.html">how to play</a>
+          <button id="bgSoundToggle" class="button secondary sound-toggle" type="button">Sound: Off</button>
+        </div>
+        
+      </section>
+    </main>
+
+    <div id="playerSetup" class="player-setup hidden" aria-hidden="true">
+      <div class="panel modal-card">
+        <button id="closePlayerSetup" class="modal-close" type="button" aria-label="Close">×</button>
+        <div class="player-setup">
+          <div class="setup-hero">
+            <h2>Piliin ang Manlalaro</h2>
+            <p class="home-tagline">Piliin ang mga manlalaro at pangalanan sila bago magsimula.</p>
+          </div>
+
+          <div class="player-setup-controls">
+            <div class="player-count-buttons">
+              <button type="button" class="button" data-count="2">2 Manlalaro</button>
+              <button type="button" class="button" data-count="3">3 Manlalaro</button>
+              <button type="button" class="button" data-count="4">4 Manlalaro</button>
+            </div>
+
+            <form id="playerNamesForm">
+              <div id="playerNames"></div>
+              <div class="button-row">
+                <button id="savePlayers" class="button primary" type="button">I-save & Simulan</button>
+                <button id="cancelPlayers" class="button secondary" type="button">Kanselahin</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="sound.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const playerSetup = document.getElementById('playerSetup');
+      const closePlayerSetup = document.getElementById('closePlayerSetup');
+      const playerNamesEl = document.getElementById('playerNames');
+      const savePlayersBtn = document.getElementById('savePlayers');
+      const cancelPlayersBtn = document.getElementById('cancelPlayers');
+      const homeStartBtn = document.getElementById('homeStartBtn');
+
+      console.log('player setup script loaded', { playerSetup, homeStartBtn });
+
+      function renderPlayerNameInputs(count = 2) {
+        playerNamesEl.innerHTML = '';
+        for (let i = 0; i < count; i += 1) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'home-player-input';
+          wrapper.innerHTML = `
+            <label>
+              Pangalan ng Manlalaro ${i + 1}:
+              <input type="text" name="player${i}" placeholder="Manlalaro ${i + 1}" required />
+            </label>
+          `;
+          playerNamesEl.appendChild(wrapper);
+        }
+      }
+
+      function openPlayerSetup() {
+        document.querySelectorAll('#playerSetup').forEach((ps) => {
+          ps.classList.remove('hidden');
+          ps.setAttribute('aria-hidden', 'false');
+          ps.style.removeProperty('display');
+          ps.style.removeProperty('opacity');
+          ps.style.removeProperty('visibility');
+          ps.style.removeProperty('pointer-events');
+        });
+      }
+
+      function closePlayerSetupHandler() {
+        document.querySelectorAll('#playerSetup').forEach((ps) => {
+          ps.classList.add('hidden');
+          ps.setAttribute('aria-hidden', 'true');
+          ps.style.removeProperty('display');
+          ps.style.removeProperty('opacity');
+          ps.style.removeProperty('visibility');
+          ps.style.removeProperty('pointer-events');
+        });
+      }
+
+      function savePlayers() {
+        const inputs = playerNamesEl.querySelectorAll('input');
+        const names = Array.from(inputs).map((input) => input.value.trim() || input.placeholder);
+        if (names.length < 2) {
+          alert('Kailangan ng hindi bababa sa 2 manlalaro.');
+          return;
+        }
+
+        localStorage.setItem('scrabblakbay_players', JSON.stringify(names));
+        window.location.href = 'game.html';
+      }
+
+      if (homeStartBtn) homeStartBtn.addEventListener('click', openPlayerSetup);
+      if (closePlayerSetup) closePlayerSetup.addEventListener('click', closePlayerSetupHandler);
+      if (cancelPlayersBtn) cancelPlayersBtn.addEventListener('click', closePlayerSetupHandler);
+      if (savePlayersBtn) savePlayersBtn.addEventListener('click', savePlayers);
+
+      document.querySelectorAll('button[data-count]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const count = Number(btn.dataset.count);
+          renderPlayerNameInputs(count);
+          openPlayerSetup();
+        });
+      });
+
+      renderPlayerNameInputs(2);
+    });
+  </script>
+</body>
+</html>
