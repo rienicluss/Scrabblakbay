@@ -46,6 +46,7 @@ let players = [];
 let currentPlayer = 0;
 let turnNumber = 1;
 let buildStartAt = null;
+let usedWords = [];
 
 const STORAGE_KEYS = {
   players: 'scrabblakbay_players',
@@ -64,6 +65,107 @@ function isWordValid(word) {
   return validWords.has(word.toUpperCase());
 }
 
+function canFormWordFromRack(word, rackLetters) {
+  const counts = {};
+  for (const letter of rackLetters) {
+    counts[letter] = (counts[letter] || 0) + 1;
+  }
+
+  for (const letter of word.toUpperCase()) {
+    if (!counts[letter]) {
+      return false;
+    }
+    counts[letter] -= 1;
+  }
+
+  return true;
+}
+
+function countLetters(letters) {
+  const counts = {};
+  for (const letter of letters) {
+    counts[letter] = (counts[letter] || 0) + 1;
+  }
+  return counts;
+}
+
+function findReadyWordsForRack(rackLetters) {
+  if (!Array.isArray(rackLetters) || rackLetters.length === 0) return [];
+
+  const readyWords = [];
+  for (const word of validWords) {
+    if (usedWords.includes(word)) continue;
+    if (word.length <= rackLetters.length && canFormWordFromRack(word, rackLetters)) {
+      readyWords.push(word);
+    }
+  }
+
+  return readyWords;
+}
+
+function findReadyRackWords() {
+  return findReadyWordsForRack(getCurrentRack());
+}
+
+function ensureRackHasValidWord(currentRack) {
+  if (findReadyWordsForRack(currentRack).length > 0) return;
+
+  const combinedLetters = currentRack.concat(bag);
+  const possibleWords = Array.from(validWords).filter((word) =>
+    word.length <= currentRack.length && canFormWordFromRack(word, combinedLetters) && !usedWords.includes(word)
+  );
+
+  if (possibleWords.length === 0) return;
+
+  // pick a random possible word so different players get varied words
+  shuffle(possibleWords);
+  const targetWord = possibleWords[0];
+  const targetCounts = countLetters(targetWord.split(''));
+  const neededCounts = { ...targetCounts };
+  const newRack = currentRack.slice();
+  const replaceIndices = [];
+
+  for (let i = 0; i < newRack.length; i += 1) {
+    const letter = newRack[i];
+    if (neededCounts[letter] > 0) {
+      neededCounts[letter] -= 1;
+    } else {
+      replaceIndices.push(i);
+    }
+  }
+
+  const missingLetters = [];
+  for (const [letter, count] of Object.entries(neededCounts)) {
+    for (let i = 0; i < count; i += 1) {
+      missingLetters.push(letter);
+    }
+  }
+
+  if (missingLetters.length > replaceIndices.length) return;
+
+  const removedLetters = [];
+  for (let i = 0; i < missingLetters.length; i += 1) {
+    const slot = replaceIndices[i];
+    removedLetters.push(newRack[slot]);
+    newRack[slot] = missingLetters[i];
+  }
+
+  for (const letter of missingLetters) {
+    const bagIndex = bag.indexOf(letter);
+    if (bagIndex === -1) return;
+    bag.splice(bagIndex, 1);
+  }
+
+  bag.push(...removedLetters);
+  shuffle(bag);
+  currentRack.length = 0;
+  currentRack.push(...newRack);
+}
+
+function updateRackHint() {
+  setMoveMessage();
+}
+
 function saveGameState() {
   const state = {
     board,
@@ -77,12 +179,29 @@ function saveGameState() {
     currentPlayer,
     turnNumber,
     buildStartAt,
+    usedWords,
   };
   localStorage.setItem(STORAGE_KEYS.gameState, JSON.stringify(state));
 }
 
 function clearSavedGameState() {
   localStorage.removeItem(STORAGE_KEYS.gameState);
+}
+
+function clearAllGameProgress() {
+  clearSavedGameState();
+  localStorage.removeItem(STORAGE_KEYS.players);
+}
+
+function enforcePageRestrictions() {
+  const path = window.location.pathname.toLowerCase();
+  if (!path.includes('game.html')) return;
+
+  const savedPlayers = JSON.parse(localStorage.getItem(STORAGE_KEYS.players) || '[]');
+  if (!Array.isArray(savedPlayers) || savedPlayers.length < 2) {
+    clearSavedGameState();
+    window.location.href = 'index.html';
+  }
 }
 
 function loadSavedGameState() {
@@ -107,6 +226,7 @@ function loadSavedGameState() {
     currentPlayer = typeof state.currentPlayer === 'number' ? state.currentPlayer : 0;
     turnNumber = typeof state.turnNumber === 'number' ? state.turnNumber : 1;
     buildStartAt = typeof state.buildStartAt === 'number' ? state.buildStartAt : null;
+    usedWords = Array.isArray(state.usedWords) ? state.usedWords : [];
     selectedTile = null;
     return true;
   } catch (e) {
@@ -162,6 +282,8 @@ const challengeTimerEl = document.getElementById('challengeTimer');
 const challengeOptionsEl = document.getElementById('challengeOptions');
 const challengeHintBtn = document.getElementById('challengeHintBtn');
 const challengeHintText = document.getElementById('challengeHint');
+const challengeAskFriendPopupEl = document.getElementById('challengeAskFriendPopup');
+const askFriendTimerEl = document.getElementById('askFriendTimer');
 const challengeRemoveTwoBtn = document.getElementById('challengeRemoveTwoBtn');
 const challengeAskFriendBtn = document.getElementById('challengeAskFriendBtn');
 const buildTimerEl = document.getElementById('buildTimer');
@@ -176,6 +298,7 @@ let currentLifelineUsed = false;
 let challengeCountdown = null;
 let challengeTimer = null;
 let challengeTime = 30;
+let askFriendTimeLeft = 10;
 let buildTimer = null;
 let buildTime = 60;
 let originalChallengePrompt = '';
@@ -562,9 +685,11 @@ function clearChallengeTimer() {
   }
 }
 
-function startChallengeTimer() {
+function startChallengeTimer(initialTime = 30) {
+  if (typeof initialTime === 'number') {
+    challengeTime = initialTime;
+  }
   if (challengeTimerEl) {
-    challengeTime = 30;
     challengeTimerEl.textContent = `${challengeTime}`;
   }
   clearChallengeTimer();
@@ -575,7 +700,6 @@ function startChallengeTimer() {
     }
     if (challengeTime <= 0) {
       clearChallengeTimer();
-      if (!challengeActive) return;
       setMoveMessage('Oras na! Walang bonus points.');
       hideChallenge();
       completeTurn(pendingWord, pendingScore, 0);
@@ -688,22 +812,57 @@ function removeTwoWrongAnswers(question) {
   const wrongButtons = buttons.filter((btn, index) => index !== question.correct && !btn.disabled);
   shuffle(wrongButtons);
   wrongButtons.slice(0, 2).forEach((btn) => {
+    // animate fade/scale then remove from DOM so the option disappears
     btn.disabled = true;
     btn.classList.add('disabled');
-    btn.textContent = `${btn.textContent} (Tinanggal)`;
+    btn.style.transition = 'opacity 220ms ease, transform 220ms ease';
+    btn.style.opacity = '0';
+    btn.style.transform = 'scale(0.9)';
+    btn.setAttribute('aria-hidden', 'true');
+    setTimeout(() => {
+      if (btn && btn.parentNode) btn.parentNode.removeChild(btn);
+    }, 240);
   });
   setMoveMessage('Tanggal-Dalawa ginamit: dalawang maling sagot ang tinanggal.');
 }
 
+function showAskFriendPopup() {
+  if (!challengeAskFriendPopupEl) return;
+  askFriendTimeLeft = 10;
+  if (askFriendTimerEl) {
+    askFriendTimerEl.textContent = `${askFriendTimeLeft}`;
+  }
+  challengeAskFriendPopupEl.classList.remove('hidden');
+}
+
+function hideAskFriendPopup() {
+  if (!challengeAskFriendPopupEl) return;
+  challengeAskFriendPopupEl.classList.add('hidden');
+}
+
 function activateAskFriend(question) {
-  setMoveMessage('Tanong-Kakampi: May 10 segundo ka para magtanong sa kakampi.');
+  clearChallengeTimer();
   setChallengeOptionsDisabled(true);
-  challengeCountdown = setTimeout(() => {
-    setChallengeOptionsDisabled(false);
-    if (challengePromptEl) challengePromptEl.textContent = originalChallengePrompt;
-    setMoveMessage('Panahon ng Tanong-Kakampi tapos na. Pumili na ng sagot.');
-    challengeCountdown = null;
-  }, 10000);
+  showAskFriendPopup();
+  if (challengePromptEl) {
+    challengePromptEl.textContent = 'Magtanong sa kakampi...';
+  }
+  challengeCountdown = setInterval(() => {
+    askFriendTimeLeft -= 1;
+    if (askFriendTimerEl) {
+      askFriendTimerEl.textContent = `${askFriendTimeLeft}`;
+    }
+    if (askFriendTimeLeft <= 0) {
+      clearChallengeCountdown();
+      hideAskFriendPopup();
+      if (challengePromptEl) {
+        challengePromptEl.textContent = originalChallengePrompt;
+      }
+      setChallengeOptionsDisabled(false);
+      setMoveMessage('Tanong-Kakampi tapos na. Pumili na ng sagot.');
+      startChallengeTimer(challengeTime);
+    }
+  }, 1000);
 }
 
 function showChallenge(word) {
@@ -720,7 +879,6 @@ function showChallenge(word) {
   challengeWordEl.textContent = `Salita: ${word}`;
   challengePromptEl.textContent = question.question;
   challengeHintText.classList.add('hidden');
-  challengeHintBtn.disabled = false;
   challengeOptionsEl.innerHTML = '';
   question.options.forEach((option, index) => {
     const button = document.createElement('button');
@@ -730,6 +888,7 @@ function showChallenge(word) {
     button.addEventListener('click', () => handleChallengeChoice(index));
     challengeOptionsEl.appendChild(button);
   });
+  renderLifelineStatus();
   enableAvailableChallengeLifelines();
   challengeModal.classList.remove('hidden');
   challengeModal.setAttribute('aria-hidden', 'false');
@@ -740,6 +899,7 @@ function hideChallenge() {
   challengeActive = false;
   clearChallengeCountdown();
   clearChallengeTimer();
+  hideAskFriendPopup();
   challengeModal.classList.add('hidden');
   challengeModal.setAttribute('aria-hidden', 'true');
 }
@@ -845,10 +1005,17 @@ function refillRack() {
   while (currentRack.length < RACK_SIZE && bag.length > 0) {
     currentRack.push(bag.pop());
   }
+  ensureRackHasValidWord(currentRack);
   renderRack();
   updateBagCount();
 }
 
+function refillPlayerRack(player) {
+  while (player.rack.length < RACK_SIZE && bag.length > 0) {
+    player.rack.push(bag.pop());
+  }
+  ensureRackHasValidWord(player.rack);
+}
 
 function renderRack() {
   rackEl.innerHTML = '';
@@ -868,6 +1035,8 @@ function renderRack() {
     });
     rackEl.appendChild(button);
   });
+
+  updateRackHint();
 }
 
 function selectTile(index) {
@@ -893,19 +1062,28 @@ function selectTile(index) {
 function handleCellClick(row, col) {
   clearError();
   const cell = board[row][col];
+  const placedTile = placedTiles.find((tile) => tile.row === row && tile.col === col);
+
+  if (placedTile) {
+    const currentRack = getCurrentRack();
+    board[row][col].letter = '';
+    placedTiles = placedTiles.filter((tile) => tile !== placedTile);
+    currentRack.push(placedTile.letter);
+    selectedTile = currentRack.length - 1;
+    renderBoard();
+    renderRack();
+    setMoveMessage('Nabawi ang inilagay na tile. Piliin ang bagong lokasyon.');
+    saveGameState();
+    return;
+  }
 
   if (cell.letter) {
-    setError('That cell already contains a tile.');
+    setError('Hindi maaaring galawin ang permanenteng tile.');
     return;
   }
 
   if (selectedTile === null) {
-    setError('Pick a tile from your rack first.');
-    return;
-  }
-
-  if (placedTiles.some((tile) => tile.row === row && tile.col === col)) {
-    setError('This tile has already been placed on that square.');
+    setError('Pumili muna ng tile mula sa iyong rack.');
     return;
   }
 
@@ -939,8 +1117,15 @@ function validateMove() {
   }
 
   const positions = placedTiles.map((tile) => (singleRow ? tile.col : tile.row)).sort((a, b) => a - b);
-  for (let i = 1; i < positions.length; i += 1) {
-    if (positions[i] !== positions[i - 1] + 1) {
+  const minPos = positions[0];
+  const maxPos = positions[positions.length - 1];
+  const fixedIndex = singleRow ? placedTiles[0].row : placedTiles[0].col;
+  for (let pos = minPos; pos <= maxPos; pos += 1) {
+    const row = singleRow ? fixedIndex : pos;
+    const col = singleRow ? pos : fixedIndex;
+    const hasPlaced = placedTiles.some((t) => t.row === row && t.col === col);
+    const hasExisting = board[row][col].letter;
+    if (!hasPlaced && !hasExisting) {
       return { valid: false, message: 'Tiles must form a contiguous word without gaps.' };
     }
   }
@@ -981,14 +1166,36 @@ function submitMove() {
     return;
   }
 
-  // stop build timer since player submitted a word
-  clearBuildTimer();
+  // do not stop the build timer on submit — allow it to keep running during challenge
 
   const orientation = placedTiles.every((tile) => tile.row === placedTiles[0].row) ? 'row' : 'col';
   const fixedIndex = orientation === 'row' ? placedTiles[0].row : placedTiles[0].col;
   const positions = placedTiles.map((tile) => (orientation === 'row' ? tile.col : tile.row)).sort((a, b) => a - b);
+
+  // expand the range to include any existing contiguous letters before/after the placed tiles
+  let startPos = positions[0];
+  let endPos = positions[positions.length - 1];
+
+  // expand backward
+  while (true) {
+    const prevPos = startPos - 1;
+    const row = orientation === 'row' ? fixedIndex : prevPos;
+    const col = orientation === 'row' ? prevPos : fixedIndex;
+    if (!isOnBoard(row, col) || !board[row][col].letter) break;
+    startPos = prevPos;
+  }
+
+  // expand forward
+  while (true) {
+    const nextPos = endPos + 1;
+    const row = orientation === 'row' ? fixedIndex : nextPos;
+    const col = orientation === 'row' ? nextPos : fixedIndex;
+    if (!isOnBoard(row, col) || !board[row][col].letter) break;
+    endPos = nextPos;
+  }
+
   const wordCoords = [];
-  for (let pos = positions[0]; pos <= positions[positions.length - 1]; pos += 1) {
+  for (let pos = startPos; pos <= endPos; pos += 1) {
     const row = orientation === 'row' ? fixedIndex : pos;
     const col = orientation === 'row' ? pos : fixedIndex;
     wordCoords.push({ row, col });
@@ -1034,6 +1241,10 @@ function completeTurn(word, moveScore, bonus = 0) {
   }
   lastMoveScore = totalMoveScore;
   lastWord = word;
+  const upperWord = (word || '').toUpperCase();
+  if (upperWord && !usedWords.includes(upperWord)) {
+    usedWords.push(upperWord);
+  }
   placedTiles.forEach((tile) => {
     board[tile.row][tile.col].letter = tile.letter;
     board[tile.row][tile.col].permanent = true;
@@ -1241,10 +1452,12 @@ function updateStats() {
     if (currentPlayerScoreEl) currentPlayerScoreEl.textContent = `${p.score || 0}`;
     if (topbarPlayerEl) topbarPlayerEl.textContent = p.name || '-';
     renderScoreGrid();
+    renderLifelineStatus();
   } else {
     if (currentPlayerNameEl) currentPlayerNameEl.textContent = 'Guest';
     if (currentPlayerScoreEl) currentPlayerScoreEl.textContent = `${totalScore}`;
     if (topbarPlayerEl) topbarPlayerEl.textContent = 'Guest';
+    renderLifelineStatus();
     if (scoreGridEl) scoreGridEl.innerHTML = '';
   }
   if (turnNumberEl) turnNumberEl.textContent = turnNumber;
@@ -1395,6 +1608,7 @@ if (playerSetupEl) {
 
 // show setup by default
 // If a saved game exists, restore it; otherwise, load player names and start fresh
+enforcePageRestrictions();
 if (loadSavedGameState()) {
   if (playerSetupEl) {
     playerSetupEl.classList.add('hidden');
@@ -1446,3 +1660,6 @@ if (loadSavedGameState()) {
     }
   }
 }
+
+window.addEventListener('beforeunload', clearAllGameProgress);
+window.addEventListener('unload', clearAllGameProgress);
